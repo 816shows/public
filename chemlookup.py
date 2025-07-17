@@ -5,12 +5,12 @@ import csv
 file_path = "chemicals.csv"
 chemicals = []
 
-# Open a file and iterate through the lines, looking for a certain value
+# Open a file and iterate through the lines
 try:
     with open(file_path, 'r', encoding='utf8') as file:
         reader = csv.reader(file) # Use csv.reader to handle CSV formatting
         for row in reader:
-            chemicals.append(row) # Add the row (as a list of strings) if it contains "instances"
+            chemicals.append(row) # Add the row (as a list of strings)
 
 except FileNotFoundError:
     print(f"Error: File not found at '{file_path}'")
