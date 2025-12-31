@@ -1,0 +1,47 @@
+Note that this assumes a local install of Docker (I'm running on a macbook) and aws cli tool.  I'm sure the steps below are not fully complete but this will be directionally accurate:
+
+--> Dockerfile
+  based on: FROM public.ecr.aws/lambda/python
+  OS package dependencies can be tricky
+  python dependencies hard-coded into Dockerfile
+  use entrypoint file
+
+
+--> build local Docker image
+  build from M1 mac requires extra care
+	using the following commands:
+
+ !! replace the ECR path in the commands below with your specific URI !!
+
+aws ecr get-login-password --region us-east-2 | docker login --username AWS --password-stdin 123456789123.dkr.ecr.us-east-2.amazonaws.com
+	* for aws cli ensure .aws has the proper credentials set
+
+docker buildx build --platform linux/amd64 --provenance=false -t {image-name} .
+
+    --platform linux/amd64: This is the crucial part. It forces Docker to build the image to be compatible with a standard x86_64 Linux 
+	environment, which is what AWS Lambda uses by default
+    --provenance=false:  prevents Docker from adding extra metadata manifests that are not supported by lambda.
+    -t <your_image_name>: Tags your image with a name
+
+docker tag {showname:latest} 123456789123.dkr.ecr.us-east-2.amazonaws.com/{namespace}
+docker push 123456789123.dkr.ecr.us-east-2.amazonaws.com/{namespace}
+
+
+--> build lambda from uploaded image into AWS ECR
+  select create function from "Container Image"
+  select the URI from the ECR where uploaded
+  x86_64 architecture
+
+
+--> configure lambda environment 
+  set timeout ~45 sec 
+  set memory to 2048MB  (adjust both as necessary)
+  run test with empty JSON to invoke function
+
+
+--> remove lambda from the VPC or a NAT gateway ($$) must be setup to permit lambda to reach internet
+
+
+--> Python file adjustments
+  there are considerably more "headless" browser options that must be set
+  os.environ['HOME'] = '/tmp' as /tmp is the only writable directory in the Lambda executable environment
